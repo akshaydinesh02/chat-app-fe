@@ -9,57 +9,54 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "../../components/ui/input-otp";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import axios from "axios";
-import { registerSchema } from "../../schema/Register";
-import { loginSchema } from "../../schema/Login";
-import { encryptNumber } from "../../utils/index";
+import { createEmailComparisonSchema } from "../../schema/Start";
+import { roomIdSchema } from "../../schema/Login";
+import { Provider } from "@supabase/supabase-js";
+import { auth } from "../../lib/supabaseClient";
+import { useAuth } from "../../hooks/Auth";
 
 const Cards = () => {
-  const secretKey = "sME7a1A6pw";
+  const [mailIdError, setMailIdError] = useState<string>("");
+  const [roomIdError, setRoomIdError] = useState<string>("");
+
+  const [inviteeMailId, setInviteeMailId] = useState<string>("");
+  const [roomId, setRoomId] = useState<string>("");
+
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [registerErrorMessage, setRegisterErrorMessage] = useState<string>("");
-  const [loginErrorMessage, setLoginErrorMessage] = useState<string>("");
-
-  const [registerData, setRegisterData] = useState({
-    name: "",
-    pin: "",
-    confirmPin: "",
-  });
-
-  const [loginData, setLoginData] = useState({
-    roomId: "",
-    name: "",
-    pin: "",
-  });
-
   const createRoom = async () => {
-    const dataParser = registerSchema.safeParse(registerData);
+    if (!user?.email) return;
+    const emailSchema = createEmailComparisonSchema(user?.email);
+    const dataParser = emailSchema.safeParse(inviteeMailId);
+
+    console.log("Parser", dataParser);
     if (!dataParser.success) {
-      setRegisterErrorMessage(dataParser.error.errors[0].message);
+      setMailIdError(dataParser.error.errors[0].message);
     } else {
-      setRegisterErrorMessage("");
+      setMailIdError("");
+
       try {
+        const {
+          data: { session },
+        } = await auth.getSession();
         const response = await axios.post(
-          "http://localhost:8080/createRoom",
-          {},
+          "http://localhost:8080/api/v1/rooms",
+          {
+            invitee: inviteeMailId,
+          },
           {
             headers: {
-              name: registerData.name,
-              pin: encryptNumber(Number(registerData.pin), secretKey),
+              Authorization: `Bearer ${session?.access_token}`,
             },
           }
         );
-        if (response.status === 200) {
-          navigate(`/rooms/${response.data.id}`);
+        console.log("Res", response);
+        if (response.status === 201) {
+          navigate(`/rooms/${response.data.data.room.id}`);
         }
       } catch (error: unknown) {
         console.error("Error creating room : ", error);
@@ -68,113 +65,92 @@ const Cards = () => {
   };
 
   const loginToRoom = async () => {
-    const dataParser = loginSchema.safeParse(loginData);
+    const dataParser = roomIdSchema.safeParse(roomId);
     if (!dataParser.success) {
-      setLoginErrorMessage(dataParser.error.errors[0].message);
+      setRoomIdError(dataParser.error.errors[0].message);
     } else {
-      setLoginErrorMessage("");
+      setRoomIdError("");
+
+      try {
+        const {
+          data: { session },
+        } = await auth.getSession();
+
+        const response = await axios.patch(
+          `http://localhost:8080/api/v1/rooms/${roomId}`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
+            },
+          }
+        );
+        console.log(response);
+        if (response.status === 200) {
+          navigate(`/rooms/${response.data.data.room.id}`);
+        }
+      } catch (error: unknown) {
+        console.error("Error validating room", error);
+      }
     }
   };
+
+  const onOAuthClick = useCallback(async (provider: Provider) => {
+    const res = await auth.signInWithOAuth({
+      provider: provider,
+    });
+    console.log("res", res);
+  }, []);
 
   return (
     <div className="p-14">
       <h1 className="bg-green-500 text-center text-2xl">Private chat rooms</h1>
-      <p>Choose an option</p>
-      <div className="flex gap-2 max-w-2xl m-auto">
-        <Card
-          onChange={() => setRegisterErrorMessage("")}
-          className={`w-1/2 ${
-            registerErrorMessage ? "border border-red-500" : ""
-          }`}
-        >
+      <Button onClick={() => onOAuthClick("google")}>Login</Button>
+      <Button>Logout</Button>
+      <div className="flex gap-2 m-auto max-w-3xl">
+        <Card onChange={() => setMailIdError("")} className="w-1/2 mx-auto">
           <CardHeader>
-            <CardTitle>Start a room</CardTitle>
+            <CardTitle className="tracking-normal">Start a room</CardTitle>
             <CardDescription>
               Start a new room and invite any of your friend for a 1-on-1 chat!
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div>
-              <Label htmlFor="inviterName">Name:</Label>
+              <Label htmlFor="mailID">Invitee's Mail ID:</Label>
               <Input
-                id="inviterName"
+                id="mailID"
                 type="text"
-                placeholder="Enter your name here"
-                value={registerData.name}
-                onChange={(e) =>
-                  setRegisterData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
+                placeholder="Enter invitee's mail ID here"
+                value={inviteeMailId}
+                onChange={(e) => setInviteeMailId(e.target.value)}
+                className={`border ${
+                  mailIdError ? "border-red-500" : "border-gray-200"
+                }`}
               />
             </div>
-
-            <div>
-              <Label htmlFor="inviterPin">PIN:</Label>
-              <InputOTP
-                id="inviterPin"
-                maxLength={4}
-                pattern={REGEXP_ONLY_DIGITS}
-                datatype="number"
-                value={registerData.pin}
-                onChange={(e) =>
-                  setRegisterData((prev) => ({
-                    ...prev,
-                    pin: e,
-                  }))
-                }
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            <div>
-              <Label htmlFor="inviterConfirmPin">Confirm PIN:</Label>
-              <InputOTP
-                id="inviterConfirmPin"
-                maxLength={4}
-                pattern={REGEXP_ONLY_DIGITS}
-                datatype="number"
-                value={registerData.confirmPin}
-                onChange={(e) =>
-                  setRegisterData((prev) => ({
-                    ...prev,
-                    confirmPin: e,
-                  }))
-                }
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
           </CardContent>
-          <CardFooter>
-            <Button onClick={createRoom} className="w-full">
+          <CardFooter className="flex flex-col">
+            <p
+              className={`text-xs font-semibold p-1 text-red-500 text-center italic ${
+                mailIdError ? "visible" : "invisible"
+              }`}
+            >
+              {mailIdError || "lorem ipsum"}
+            </p>
+            <Button
+              disabled={!!mailIdError}
+              onClick={createRoom}
+              className="w-full"
+            >
               Start
             </Button>
           </CardFooter>
-          <p className="text-xs font-semibold p-1 text-red-500 text-center italic">
-            {registerErrorMessage}
-          </p>
         </Card>
 
-        <Card
-          onChange={() => setLoginErrorMessage("")}
-          className={`w-1/2 ${
-            loginErrorMessage ? "border border-red-500" : ""
-          }`}
-        >
+        <Card onChange={() => setRoomIdError("")} className="w-1/2 mx-auto">
           <CardHeader>
-            <CardTitle>Join a room</CardTitle>
+            <CardTitle className="tracking-normal">Join a room</CardTitle>
             <CardDescription>
               Enter the room ID, name, pin and click on join for a 1-on-1 chat!
             </CardDescription>
@@ -186,61 +162,31 @@ const Cards = () => {
                 id="roomId"
                 type="text"
                 placeholder="Enter room ID here"
-                value={loginData.roomId}
-                onChange={(e) =>
-                  setLoginData((prev) => ({
-                    ...prev,
-                    roomId: e.target.value,
-                  }))
-                }
+                value={roomId}
+                onChange={(e) => setRoomId(e.target.value)}
+                className={`border ${
+                  roomIdError ? " border-red-500" : "border-gray-200"
+                }`}
               />
-            </div>
-            <div>
-              <Label htmlFor="inviteeName">Name:</Label>
-              <Input
-                id="inviteeName"
-                type="text"
-                placeholder="Enter your name here"
-                value={loginData.name}
-                onChange={(e) =>
-                  setLoginData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="inviteePin">PIN:</Label>
-              <InputOTP
-                id="inviteePin"
-                maxLength={4}
-                pattern={REGEXP_ONLY_DIGITS}
-                value={loginData.pin}
-                onChange={(e) =>
-                  setLoginData((prev) => ({
-                    ...prev,
-                    pin: e,
-                  }))
-                }
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
-                </InputOTPGroup>
-              </InputOTP>
             </div>
           </CardContent>
-          <CardFooter>
-            <Button onClick={loginToRoom} className="w-full">
+
+          <CardFooter className="flex flex-col">
+            <p
+              className={`text-xs font-semibold p-1 text-red-500 text-center italic ${
+                roomIdError ? "visible" : "invisible"
+              }`}
+            >
+              {roomIdError || "lorem ipsum"}
+            </p>
+            <Button
+              disabled={!!roomIdError}
+              onClick={loginToRoom}
+              className="w-full"
+            >
               Join
             </Button>
           </CardFooter>
-          <p className="text-xs font-semibold p-1 text-red-500 text-center italic">
-            {loginErrorMessage}
-          </p>
         </Card>
       </div>
     </div>
