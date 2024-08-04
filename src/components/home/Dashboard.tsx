@@ -1,5 +1,5 @@
-import { Label } from "../../components/ui/label";
-import { Button } from "../../components/ui/button";
+import { Label } from "../ui/label";
+import { Button } from "../ui/button";
 import {
   Card,
   CardContent,
@@ -7,18 +7,21 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
+} from "../ui/card";
+import { Input } from "../ui/input";
 import { useNavigate } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { createEmailComparisonSchema } from "../../schema/Start";
 import { roomIdSchema } from "../../schema/Login";
 import { Provider } from "@supabase/supabase-js";
-import { auth } from "../../lib/supabaseClient";
+import { auth, supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/Auth";
+import { decrypt, encrypt } from "crypto-js/aes";
+import CryptoJS from "crypto-js";
+import { createRoom, updateRoom } from "../../lib/session";
 
-const Cards = () => {
+const Dashboard = () => {
   const [mailIdError, setMailIdError] = useState<string>("");
   const [roomIdError, setRoomIdError] = useState<string>("");
 
@@ -27,8 +30,27 @@ const Cards = () => {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const secretKey = "sME7a1A6pw";
 
-  const createRoom = async () => {
+  useEffect(() => {
+    const realTimeRooMetaData = supabase.channel("onlineRooms");
+    realTimeRooMetaData.on("broadcast", { event: "cursor-pos" }, (payload) => {
+      console.log("Pay load", payload);
+    });
+
+    const subscribeChannel = async () => {
+      if (realTimeRooMetaData.state === "joined") return;
+      await realTimeRooMetaData.subscribe();
+      console.log("Subscribed");
+    };
+    subscribeChannel();
+
+    return () => {
+      realTimeRooMetaData.unsubscribe();
+    };
+  }, []);
+
+  const createRoomHandler = async () => {
     if (!user?.email) return;
     const emailSchema = createEmailComparisonSchema(user?.email);
     const dataParser = emailSchema.safeParse(inviteeMailId);
@@ -56,7 +78,17 @@ const Cards = () => {
         );
         console.log("Res", response);
         if (response.status === 201) {
-          navigate(`/rooms/${response.data.data.room.id}`);
+          const newRoomId = response.data.data.room.id;
+          const encryptedAccessData: string | null =
+            sessionStorage.getItem("v1/rooms");
+          if (encryptedAccessData && typeof encryptedAccessData === "string") {
+            // If session storage data already exists
+            updateRoom(encryptedAccessData, newRoomId, user.id);
+          } else {
+            // If session storage data does not exist
+            createRoom(newRoomId, user.id);
+          }
+          navigate(`/rooms/${newRoomId}`);
         }
       } catch (error: unknown) {
         console.error("Error creating room : ", error);
@@ -140,7 +172,7 @@ const Cards = () => {
             </p>
             <Button
               disabled={!!mailIdError}
-              onClick={createRoom}
+              onClick={createRoomHandler}
               className="w-full"
             >
               Start
@@ -193,4 +225,4 @@ const Cards = () => {
   );
 };
 
-export default Cards;
+export default Dashboard;

@@ -1,5 +1,5 @@
 import { Routes, Route, BrowserRouter } from "react-router-dom";
-import Cards from "./components/home/Cards";
+import Cards from "./components/home/Dashboard";
 // import RoomsPage from "./components/rooms";
 import ChatRoom from "./components/ChatRoom";
 import { AuthProvider } from "./hooks/Auth";

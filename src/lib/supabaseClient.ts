@@ -5,5 +5,6 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 const auth = supabase.auth;
+// const realTimeRooMetaData = supabase.channel("onlineRooms");
 
 export { supabase, auth };

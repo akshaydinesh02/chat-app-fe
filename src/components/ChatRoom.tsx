@@ -17,6 +17,9 @@ import axios from "axios";
 import { encryptNumber } from "../utils";
 import { auth } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/Auth";
+import { checkAccess, createRoom } from "../lib/session";
+import { useNavigate } from "react-router-dom";
+import { realTimeRooMetaData } from "../lib/supabaseClient";
 
 const ChatRoom: React.FC = () => {
   const [messageData, setMessageData] = useState<
@@ -39,46 +42,72 @@ const ChatRoom: React.FC = () => {
   ]);
   const [inputValue, setInputValue] = useState<string>("");
   const ws = useRef<WebSocket | null>(null);
-  const [roomLocked, setRoomLocked] = useState<boolean>(false);
+  const [roomLocked, setRoomLocked] = useState<boolean>(true);
   const [closeConfirmAlertOpen, setCloseConfirmAlertOpen] =
     useState<boolean>(false);
-  const [roomDataLoading, setRoomDataLoading] = useState(false);
+  const [roomDataLoading, setRoomDataLoading] = useState(true);
   const [roomExists, setRoomExists] = useState(true);
 
   const { roomId } = useParams();
   const secretKey = "sME7a1A6pw";
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  console.log(messageData);
+  const checkAccessAPI = async (roomId: string, userId: string) => {
+    const {
+      data: { session },
+    } = await auth.getSession();
+    console.log("CALLING GET API");
+    const result = await axios.get(
+      `http://localhost:8080/api/v1/rooms/${roomId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+      }
+    );
+    if (result.status === 200) {
+      setRoomExists(true);
+      setRoomLocked(false);
+      createRoom(roomId, userId);
+    }
+  };
 
-  // useEffect(() => {
-  //   async function validateRoom() {
-  //     try {
-  //       if (!roomId) return;
-  //       const {
-  //         data: { session },
-  //       } = await auth.getSession();
+  useEffect(() => {
+    // async function validateRoomAccess() {
+    //   if (!user) navigate("/");
+    //   console.log("validateRoomAccess", roomId, user);
+    //   try {
+    //     if (!roomId || !user?.id) return;
 
-  //       const result = await axios.get(
-  //         `http://localhost:8080/api/v1/rooms/${roomId}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${session?.access_token}`,
-  //           },
-  //         }
-  //       );
-  //       if (result.status === 200) {
-  //         setRoomExists(true);
-  //       }
-  //     } catch (error: unknown) {
-  //       console.error("Error validating room", error);
-  //     } finally {
-  //       setRoomDataLoading(false);
-  //     }
-  //   }
-  //   validateRoom();
-  // }, [roomId]);
+    //     const encryptedAccessData: string | null =
+    //       sessionStorage.getItem("v1/rooms");
+    //     if (encryptedAccessData) {
+    //       console.log("Entering if block");
+    //       const access = checkAccess(encryptedAccessData, roomId, user.id);
+
+    //       if (access) {
+    //         setRoomLocked(false);
+    //       } else {
+    //         checkAccessAPI(roomId, user.id);
+    //       }
+    //     } else {
+    //       console.log("Entering else block");
+    //       // API calling here
+    //       checkAccessAPI(roomId, user.id);
+    //     }
+    //   } catch (error: unknown) {
+    //     console.error("Error validating room", error);
+    //   } finally {
+    //     setRoomDataLoading(false);
+    //   }
+    // }
+    // validateRoomAccess();
+
+    if (!roomId || !user?.id) return;
+    checkAccessAPI(roomId, user.id);
+  }, [roomId, user]);
 
   useEffect(() => {
     if (
@@ -88,9 +117,13 @@ const ChatRoom: React.FC = () => {
       !user
     )
       return;
-    ws.current = new WebSocket(
-      `ws://localhost:8080/rooms/${roomId}?id=${user.id}`
-    );
+
+    const url = `ws://localhost:8080/rooms/${roomId}?id=${
+      user.id
+    }&email=${encodeURIComponent(user.email!)}&name=${encodeURIComponent(
+      user.user_metadata.name!
+    )}`;
+    ws.current = new WebSocket(url);
     ws.current.binaryType = "blob";
 
     ws.current.addEventListener("open", () => {
@@ -118,7 +151,12 @@ const ChatRoom: React.FC = () => {
     };
 
     return () => {
-      ws.current?.close();
+      const userData = {
+        id: user.id,
+        name: user.user_metadata.name,
+        email: user.email,
+      };
+      ws.current?.close(1000, JSON.stringify(userData));
     };
   }, [roomLocked, roomExists]);
 
@@ -162,7 +200,7 @@ const ChatRoom: React.FC = () => {
   return (
     <div className="relative">
       {roomLocked ? (
-        <></>
+        <div className="text-black">LOCKED</div>
       ) : (
         // <LoginPinModal
         //   open={roomLocked}
