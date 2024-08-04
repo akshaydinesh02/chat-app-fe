@@ -13,6 +13,7 @@ import {
 } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Link } from "react-router-dom";
+import { useAuth } from "../hooks/Auth";
 
 const sellingPoints = [
   {
@@ -43,6 +44,8 @@ const sellingPoints = [
 
 const HomePage = () => {
   // const session = useAuth().session;
+  const user = useAuth().user;
+  const logout = useAuth().signOut;
 
   // const onOAuthClick = useCallback(async (provider: Provider) => {
   //   const res = await auth.signInWithOAuth({
@@ -76,11 +79,16 @@ const HomePage = () => {
             </Card>
           ))}
         </div>
-        <Link to="/auth/sign-up" className="mx-auto my-6">
-          <Button className="bg-violet-300 text-black hover:bg-violet-400 font-semibold">
-            Try Now
-          </Button>
-        </Link>
+        {!user ? (
+          <Link to="/auth/sign-up" className="mx-auto my-6">
+            <Button className="bg-violet-300 text-black hover:bg-violet-400 font-semibold">
+              Try Now
+            </Button>
+          </Link>
+        ) : (
+          <></>
+        )}
+        <button onClick={logout}> test logout</button>
       </section>
     </main>
   );
