@@ -1,19 +1,13 @@
-// import { Link } from "react-router-dom";
-// import { auth, supabase } from "../../lib/supabaseClient";
-// import { useAuth } from "../../hooks/Auth";
-// import { useCallback } from "react";
-// import { Provider } from "@supabase/supabase-js";
 import {
   Card,
   CardContent,
   CardDescription,
-  // CardFooter,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Button } from "../components/ui/button";
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/Auth";
+import { useAuth } from "../../hooks/Auth";
 
 const sellingPoints = [
   {
@@ -55,8 +49,8 @@ const HomePage = () => {
   // }, []);
 
   return (
-    <main>
-      <section className="main-container max-w-[80%] mx-auto flex flex-col gap-2">
+    <main className="max-w-[80%] mx-auto">
+      <section className="flex flex-col gap-2">
         <Card className="border-0 shadow-none w-[50%] mx-auto my-8 bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400">
           <CardHeader className="items-center justify-center">
             <CardTitle className="text-3xl">Confidant</CardTitle>

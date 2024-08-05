@@ -1,55 +1,70 @@
 import { createBrowserRouter } from "react-router-dom";
-// import SignInPage from "../pages/auth/SignInPage.tsx";
-// import SignUpPage from "../pages/auth/SignUpPage.tsx";
-// import ProtectedPage from "../pages/ProtectedPage.tsx";
-// import NotFoundPage from "../pages/404Page.tsx";
 import AuthProtectedRoute from "./AuthProtectedRoute.tsx";
 import Providers from "../../Providers.tsx";
-import Dashboard from "../../components/home/Dashboard.tsx";
-import HomePage from "../HomePage.tsx";
+import DashboardPage from "../dashboard/index.tsx";
+import HomePage from "../home/index.tsx";
 import SignInPage from "../auth/SignInPage.tsx";
 import SignUpPage from "../auth/SignUpPage.tsx";
+import NavigateToHomeRoute from "./NavigateToHomeRoute.tsx";
+import AboutPage from "../about/index.tsx";
+import DocsPage from "../docs/index.tsx";
+import ErrorPage from "../error/index.tsx";
+import NotFoundPage from "../error/NotFoundPage.tsx";
 
 const router = createBrowserRouter([
-  // I recommend you reflect the routes here in the pages folder
   {
     path: "/",
     element: <Providers />,
-    errorElement: <p>ERROR PAGE</p>,
+    errorElement: <ErrorPage />,
     children: [
-      // Public routes
       {
         path: "/",
         element: <HomePage />,
       },
       {
-        path: "/auth/sign-in",
-        element: <SignInPage />,
+        path: "/about",
+        element: <AboutPage />,
       },
       {
-        path: "/auth/sign-up",
-        element: <SignUpPage />,
+        path: "/docs",
+        element: <DocsPage />,
       },
-      // Auth Protected routes
+      {
+        path: "/",
+        element: <NavigateToHomeRoute />,
+        children: [
+          {
+            path: "/auth/sign-in",
+            element: <SignInPage />,
+          },
+        ],
+      },
+      {
+        path: "/",
+        element: <NavigateToHomeRoute />,
+        children: [
+          {
+            path: "/auth/sign-up",
+            element: <SignUpPage />,
+          },
+        ],
+      },
       {
         path: "/",
         element: <AuthProtectedRoute />,
         children: [
           {
             path: "/dashboard",
-            element: <Dashboard />,
+            element: <DashboardPage />,
           },
         ],
       },
+
+      {
+        path: "*",
+        element: <NotFoundPage />,
+      },
     ],
-  },
-  {
-    path: "*",
-    element: (
-      <>
-        <p>NOT FOUND PAGE</p>
-      </>
-    ),
   },
 ]);
 

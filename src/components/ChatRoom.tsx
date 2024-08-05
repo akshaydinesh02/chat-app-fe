@@ -10,16 +10,13 @@ import { useParams } from "react-router-dom";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
-import LoginPinModal from "./rooms/LoginPinModal";
 import CloseConfirmationModal from "./rooms/CloseConfirmationModal";
 import Header from "./rooms/Header";
 import axios from "axios";
-import { encryptNumber } from "../utils";
 import { auth } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/Auth";
-import { checkAccess, createRoom } from "../lib/session";
+import { createRoom } from "../lib/session";
 import { useNavigate } from "react-router-dom";
-import { realTimeRooMetaData } from "../lib/supabaseClient";
 
 const ChatRoom: React.FC = () => {
   const [messageData, setMessageData] = useState<

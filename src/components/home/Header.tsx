@@ -64,7 +64,10 @@ const Header = () => {
           </Avatar>
         ) : (
           <Link to="/auth/sign-in">
-            <Button className="bg-violet-400 text-black hover:bg-violet-500 hover:text-gray-100 font-semibold">
+            <Button
+              disabled={pathname === "/auth/sign-in"}
+              className="bg-violet-400 text-black hover:bg-violet-500 hover:text-gray-100 font-semibold"
+            >
               Sign in
             </Button>
           </Link>

@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
-import { auth, supabase } from "../../lib/supabaseClient";
-import { cn } from "../../lib/utils";
+import { auth } from "../../lib/supabaseClient";
 import {
   Card,
   CardContent,
@@ -11,11 +9,9 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,23 +20,13 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { loginSchema } from "../../schema/Login";
+import { LoginSchema } from "../../schema/Auth";
 import { Button } from "../../components/ui/button";
-// import { useAuth } from "../../hooks/Auth";
-import { useFormState } from "react-hook-form";
 import { Provider } from "@supabase/supabase-js";
 
 const SignInPage = () => {
-  // ==============================
-  // If user is already logged in, redirect to home
-  // This logic is being repeated in SignIn and SignUp..
-  // const session = useAuth().session;
-  // if (session) return <Navigate to="/" />;
-  // maybe we can create a wrapper component for these pages
-  // just like the ./router/AuthProtectedRoute.tsx? up to you.
-  // ==============================
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof LoginSchema>>({
+    resolver: zodResolver(LoginSchema),
     defaultValues: {
       email: "",
       password: "",
@@ -49,7 +35,7 @@ const SignInPage = () => {
   // const errors = useFormState(form.control).errors;
   // console.log({ errors });
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
+  const onSubmit = async (values: z.infer<typeof LoginSchema>) => {
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
@@ -79,7 +65,7 @@ const SignInPage = () => {
         }
       );
     }
-  }
+  };
 
   const signInWithProvider = async (provider: Provider) => {
     const { error } = await auth.signInWithOAuth({
@@ -131,7 +117,7 @@ const SignInPage = () => {
                   )}
                 />
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col">
                 <Button
                   // disabled={form.control.err}
                   type="submit"
@@ -139,6 +125,15 @@ const SignInPage = () => {
                 >
                   Login
                 </Button>
+                <CardDescription>
+                  Don't have an account yet?{" "}
+                  <Link
+                    to="/auth/sign-up"
+                    className="text-indigo-500 font-bold underline"
+                  >
+                    Sign up
+                  </Link>
+                </CardDescription>
               </CardFooter>
             </Card>
           </form>
@@ -146,14 +141,13 @@ const SignInPage = () => {
 
         <Card className="w-[30%] m-auto">
           <CardHeader className="flex flex-col justify-center w-full gap-2">
-            <CardTitle className="text-center">Single sign on</CardTitle>
             <Button
               type="button"
               variant="secondary"
               className="hover:bg-gray-300 font-semibold"
               onClick={() => signInWithProvider("google")}
             >
-              Login using Google
+              Google
             </Button>
             <Button
               type="button"
@@ -161,7 +155,7 @@ const SignInPage = () => {
               className="hover:bg-gray-300 font-semibold"
               onClick={() => signInWithProvider("github")}
             >
-              Login using GitHub
+              GitHub
             </Button>
           </CardHeader>
         </Card>
