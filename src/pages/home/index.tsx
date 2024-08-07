@@ -8,6 +8,7 @@ import {
 import { Button } from "../../components/ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/Auth";
+import { useRealTimeRoomData } from "../../hooks/useRealTimeRoomData";
 
 const sellingPoints = [
   {
@@ -40,6 +41,8 @@ const HomePage = () => {
   // const session = useAuth().session;
   const user = useAuth().user;
   const logout = useAuth().signOut;
+  const metadata = useRealTimeRoomData();
+  console.log("Number of rooms", metadata);
 
   // const onOAuthClick = useCallback(async (provider: Provider) => {
   //   const res = await auth.signInWithOAuth({

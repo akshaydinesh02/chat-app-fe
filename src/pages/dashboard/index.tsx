@@ -28,23 +28,23 @@ const DashboardPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const realTimeRooMetaData = supabase.channel("onlineRooms");
-    realTimeRooMetaData.on("broadcast", { event: "cursor-pos" }, (payload) => {
-      console.log("Pay load", payload);
-    });
+  // useEffect(() => {
+  //   const realTimeRooMetaData = supabase.channel("onlineRooms");
+  //   realTimeRooMetaData.on("broadcast", { event: "cursor-pos" }, (payload) => {
+  //     console.log("Pay load", payload);
+  //   });
 
-    const subscribeChannel = async () => {
-      if (realTimeRooMetaData.state === "joined") return;
-      await realTimeRooMetaData.subscribe();
-      console.log("Subscribed");
-    };
-    subscribeChannel();
+  //   const subscribeChannel = async () => {
+  //     if (realTimeRooMetaData.state === "joined") return;
+  //     await realTimeRooMetaData.subscribe();
+  //     console.log("Subscribed");
+  //   };
+  //   subscribeChannel();
 
-    return () => {
-      realTimeRooMetaData.unsubscribe();
-    };
-  }, []);
+  //   return () => {
+  //     realTimeRooMetaData.unsubscribe();
+  //   };
+  // }, []);
 
   const createRoomHandler = async () => {
     if (!user?.email) return;
@@ -174,8 +174,9 @@ const DashboardPage = () => {
   return (
     <main className="max-w-[80%] mx-auto">
       <section className="flex gap-2 w-[50%] mx-auto">
-        {cards.map((card) => (
+        {cards.map((card, _i) => (
           <Card
+            key={_i}
             onChange={card.onChange}
             className="w-1/2 mx-auto bg-indigo-200"
           >

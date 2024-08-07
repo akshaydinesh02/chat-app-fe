@@ -13,12 +13,34 @@ import {
 
 const faq = [
   {
-    trigger: "Is it accessible?",
-    content: "Yes. It adheres",
+    trigger: "How secure is my chat on Confidant?",
+    content:
+      "Your chat is highly secure on Confidant. We do not store any messages on our servers, ensuring complete privacy for your conversations.",
   },
   {
-    trigger: "Is it doable?",
-    content: "NO. It's not",
+    trigger: "Can anyone access my chat history?",
+    content:
+      "No, since Confidant does not store any chat history, there is no way for anyone, including us, to access your past conversations.",
+  },
+  {
+    trigger: "How do I get started with Confidant?",
+    content:
+      "Getting started is simple. Just create your account, and you can start chatting privately immediately.",
+  },
+  {
+    trigger: "Does Confidant support multimedia messages?",
+    content:
+      "Currently, Confidant focuses on text-based messaging to ensure maximum privacy and lightweight performance. We are working on secure ways to handle multimedia messages in future updates.",
+  },
+  {
+    trigger: "Is Confidant available on both mobile and web platforms?",
+    content:
+      "Yes, Confidant is designed to be accessible on both mobile devices and web browsers, providing a seamless experience across platforms.",
+  },
+  {
+    trigger: "Is Confidant free to use?",
+    content:
+      "Yes, Confidant is completely free to use. Enjoy private and secure messaging without any cost.",
   },
 ];
 
@@ -58,10 +80,10 @@ const AboutPage = () => {
                   value={_i.toString()}
                   className="border-none"
                 >
-                  <AccordionTrigger className="px-4 bg-indigo-300 rounded-md">
+                  <AccordionTrigger className="px-4 bg-indigo-300 rounded-md font-normal">
                     {q.trigger}
                   </AccordionTrigger>
-                  <AccordionContent className="bg-indigo-400 rounded-md p-4">
+                  <AccordionContent className="bg-indigo-400 rounded-md p-4 text-left font-semibold">
                     {q.content}
                   </AccordionContent>
                 </AccordionItem>

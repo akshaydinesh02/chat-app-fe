@@ -6,7 +6,6 @@ import { Button } from "../ui/button";
 
 const Header = () => {
   const user = useAuth().user;
-  console.log({ user });
   const userImage = user?.user_metadata?.picture ?? "/user-avatar-2.png";
   const location = useLocation();
   const pathname = location.pathname;
